@@ -6,7 +6,8 @@ namespace redditor
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            var x = RedditApi.GetUserInfo("electrostat");
+            Console.WriteLine(x);
         }
     }
 }
