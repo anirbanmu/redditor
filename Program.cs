@@ -6,8 +6,11 @@ namespace redditor
     {
         static void Main(string[] args)
         {
-            var x = RedditApi.GetUserInfo("electrostat");
-            Console.WriteLine(x);
+            var userInfo = RedditApi.GetUserInfo(args[0]);
+            Console.WriteLine("Username: " + userInfo.UserName);
+            Console.WriteLine("Link karma: " + userInfo.LinkKarma);
+            Console.WriteLine("Comment karma: " + userInfo.CommentKarma);
+            Console.WriteLine("Account created: " + userInfo.AccountCreated + " UTC");
         }
     }
 }
