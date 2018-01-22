@@ -7,7 +7,7 @@ public class RedditApi
 {
     public static readonly Uri BaseUri = new Uri("https://www.reddit.com/");
 
-    static dynamic HttpRequest(Uri uri)
+    static T HttpRequest<T>(Uri uri)
     {
         var request = WebRequest.Create(uri) as HttpWebRequest;
         using (var response = request.GetResponse() as HttpWebResponse)
@@ -17,30 +17,49 @@ public class RedditApi
                 using (var reader = new StreamReader(stream))
                 {
                     var result = reader.ReadToEnd();
-                    return ParseJson(result);
+                    return ParseJson<T>(result);
                 }
             }
         }
     }
 
-    static dynamic ParseJson(string jsonString)
+    static T ParseJson<T>(string jsonString)
     {
-        return JsonConvert.DeserializeObject<dynamic>(jsonString);
+        return JsonConvert.DeserializeObject<T>(jsonString);
+    }
+
+    public class ApiResponseContainer<T>
+    {
+        [JsonProperty("kind")]
+        public string Kind { get; private set; }
+
+        [JsonProperty("data")]
+        public T Data { get; private set; }
     }
 
     public class UserInfo
     {
-        public readonly string UserName;
-        public readonly int LinkKarma;
-        public readonly int CommentKarma;
-        public readonly DateTime AccountCreated;
+        [JsonProperty("name")]
+        public string Name { get; private set; }
 
-        public UserInfo(string name = "", int linkKarma = 0, int commentKarma = 0, int accountCreated = 0)
+        [JsonProperty("created_utc")]
+        [JsonConverter(typeof(TimestampToDateTimeConverter))]
+        public DateTime AccountCreatedUtc { get; private set; }
+
+        [JsonProperty("link_karma")]
+        public int LinkKarma { get; private set; }
+
+        [JsonProperty("comment_karma")]
+        public int CommentKarma{ get; private set; }
+
+        public class TimestampToDateTimeConverter : JsonConverter
         {
-            UserName = name;
-            LinkKarma = linkKarma;
-            CommentKarma = commentKarma;
-            AccountCreated = DateTimeOffset.FromUnixTimeSeconds(accountCreated).DateTime;
+            public override bool CanConvert(Type t){ return t == typeof(DateTime); }
+            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer){ throw new NotImplementedException(); }
+            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+            {
+                return DateTimeOffset.FromUnixTimeSeconds(Convert.ToInt64((double)reader.Value)).DateTime;
+            }
         }
     }
 
@@ -49,9 +68,8 @@ public class RedditApi
         try
         {
             Uri aboutUserUri = new Uri(BaseUri, "user/" + username + "/about.json");
-            var json = HttpRequest(aboutUserUri).data;
-            var user = new UserInfo(json.name.ToObject<string>(), json.link_karma.ToObject<int>(), json.comment_karma.ToObject<int>(), json.created_utc.ToObject<int>());
-            return user;
+            var json = HttpRequest<ApiResponseContainer<UserInfo>>(aboutUserUri);
+            return json.Data;
         }
         catch(WebException e)
         {
