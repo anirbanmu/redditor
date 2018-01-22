@@ -52,7 +52,7 @@ public class RedditApi
         [JsonProperty("comment_karma")]
         public int CommentKarma{ get; private set; }
 
-        public class TimestampToDateTimeConverter : JsonConverter
+        class TimestampToDateTimeConverter : JsonConverter
         {
             public override bool CanConvert(Type t){ return t == typeof(DateTime); }
             public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer){ throw new NotImplementedException(); }
